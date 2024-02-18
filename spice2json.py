@@ -46,6 +46,13 @@ def clump_transmission_gates(json_input):
 
         # Create a new transmission gate cell and remove the individual nfet, pfet, and inverter cells
         for nfet_name, pfet_name, inverter_name in trios_to_clump:
+            try:
+                json_input["modules"][module_name]["cells"][nfet_name]
+                json_input["modules"][module_name]["cells"][pfet_name]
+            except KeyError:
+                print("SKIPPING transmission gate from", pfet_name, nfet_name, inverter_name, file=sys.stderr)
+                continue
+            print("Creating transmission gate from", pfet_name, nfet_name, inverter_name, file=sys.stderr)
             tg_name = f"{nfet_name}_{pfet_name}"
             tg_connections = {
                 "A": json_input["modules"][module_name]["cells"][nfet_name]["connections"]["S"],
@@ -86,6 +93,7 @@ def clump_inverters(json_input, vdd="VPWR", gnd="VGND"):
                     continue
                 if pfet_cell["connections"]["G"] != nfet_cell["connections"]["G"]:
                     continue
+                A = pfet_cell["connections"]["G"]
                 possible_ys = []
                 if pfet_cell["connections"]["D"] != [get_netid(vdd)]:
                     possible_ys += pfet_cell["connections"]["D"]
@@ -98,14 +106,22 @@ def clump_inverters(json_input, vdd="VPWR", gnd="VGND"):
 
                 if len(possible_ys) != 2 or possible_ys[0] != possible_ys[1]:
                     continue
-                inverters_to_clump.append((pfet_name, nfet_name, possible_ys[0]))
+                y = [possible_ys[0]]
+                inverters_to_clump.append((pfet_name, nfet_name, A, y))
 
         # Create a new inverter cell and remove the individual pfet and nfet cells
-        for pfet_name, nfet_name, y in inverters_to_clump:
+        for pfet_name, nfet_name, A, y in inverters_to_clump:
+            try:
+                json_input["modules"][module_name]["cells"][pfet_name]
+                json_input["modules"][module_name]["cells"][nfet_name]
+            except KeyError:
+                print("SKIPPING inverter from", pfet_name, nfet_name, file=sys.stderr)
+                continue
+            print("Creating inverter from", pfet_name, nfet_name, file=sys.stderr)
             inverter_name = f"{pfet_name}_{nfet_name}"
             inverter_connections = {
-                "A": json_input["modules"][module_name]["cells"][pfet_name]["connections"]["G"],
-                "Y": [y]
+                "A": A,
+                "Y": y
             }
             inverter_attributes = {
                 "pfet": pfet_name,
@@ -194,6 +210,15 @@ def clump_tristate_buffers(json_input, vdd="VPWR", gnd="VGND"):
 
         # Create a new tristate buffer cell and remove the individual pfets, nfets, and inverter cells
         for pfet1_name, pfet2_name, nfet1_name, nfet2_name, inverter_name, y in buffers_to_clump:
+            try:
+                json_input["modules"][module_name]["cells"][pfet1_name]
+                json_input["modules"][module_name]["cells"][pfet2_name]
+                json_input["modules"][module_name]["cells"][nfet1_name]
+                json_input["modules"][module_name]["cells"][nfet2_name]
+            except KeyError:
+                print("SKIPPING tristate_buffer from", pfet1_name, pfet2_name, nfet1_name, nfet2_name, inverter_name, file=sys.stderr)
+                continue
+            print("Creating tristate_buffer from", pfet1_name, pfet2_name, nfet1_name, nfet2_name, inverter_name, file=sys.stderr)
             buffer_name = f"{pfet1_name}_{pfet2_name}_{nfet1_name}_{nfet2_name}"
             buffer_connections = {
                 "A": json_input["modules"][module_name]["cells"][pfet1_name]["connections"]["G"],

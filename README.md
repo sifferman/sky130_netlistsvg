@@ -8,6 +8,8 @@ This project creates transistor schematics for the [sky130 PDK](https://github.c
 ## Usage
 
 ```bash
+make all -j `nproc`
+# or
 make svg/cells/dfxtp/sky130_fd_sc_hd__dfxtp_1.svg
 ...
 ```
