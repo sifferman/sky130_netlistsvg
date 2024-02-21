@@ -2,6 +2,7 @@
 
 import sys
 import json
+import copy
 
 port_id_map = {}
 current_id = 2 # Starting ID
@@ -80,6 +81,51 @@ def clump_transmission_gates(json_input):
             del json_input["modules"][module_name]["cells"][nfet_name]
             del json_input["modules"][module_name]["cells"][pfet_name]
 
+def clump_fingers(json_input):
+    for module_name, module in json_input["modules"].items():
+        for fet_type in ["pfet", "nfet"]:
+            for fet_name, fet_cell in module["cells"].copy().items():
+                try:
+                    json_input["modules"][module_name]["cells"][fet_name]
+                except KeyError:
+                    continue
+                if fet_cell["type"] != fet_type:
+                    continue
+                fingers = [fet_name]
+                for finger_name, finger_cell in module["cells"].items():
+                    if finger_name == fet_name:
+                        continue
+                    if finger_cell["type"] != fet_cell["type"]:
+                        continue
+                    # check connections
+                    if fet_cell["connections"]["G"] != finger_cell["connections"]["G"]:
+                        continue
+                    if fet_cell["connections"]["D"] == finger_cell["connections"]["D"] \
+                        and fet_cell["connections"]["S"] == finger_cell["connections"]["S"]:
+                        pass
+                    elif fet_cell["connections"]["D"] == finger_cell["connections"]["S"] \
+                        and fet_cell["connections"]["S"] == finger_cell["connections"]["D"]:
+                        pass
+                    else:
+                        continue
+                    fingers += [finger_name]
+                    finger_cell["type"] = "REMOVE"
+                if len(fingers) == 1:
+                    continue
+                print("Creating finger from", " ".join(fingers), file=sys.stderr)
+                fet_cell = copy.deepcopy(fet_cell)
+                clumped_name = "_".join(fingers)
+                finger_attributes = {}
+                for i, finger in enumerate(fingers):
+                    finger_attributes[fet_type+str(i)] = finger
+                json_input["modules"][module_name]["cells"][clumped_name] = {
+                    "type": fet_type,
+                    "connections": fet_cell["connections"],
+                    "port_directions": fet_cell["port_directions"],
+                    "attributes": finger_attributes
+                }
+                for finger in fingers:
+                    del json_input["modules"][module_name]["cells"][finger]
 
 
 def clump_inverters(json_input, vdd="VPWR", gnd="VGND"):
@@ -320,9 +366,11 @@ def parse_spice_to_json(spice_file):
                         fet_ports = ["S", "G", "D", "B"]
                         if i < 4:
                             connections[fet_ports[i]] = [get_netid(port)]
-                    port_directions["S"] = "input"
-                    port_directions["G"] = "input"
-                    port_directions["D"] = "output"
+                    port_directions = {
+                        "S": "input",
+                        "G": "input",
+                        "D": "output"
+                    }
                     # port_directions["B"] = "input"
                 else:
                     for i, port in enumerate(ports):
@@ -341,6 +389,7 @@ def parse_spice_to_json(spice_file):
         "modules": modules
     }
 
+    clump_fingers(json_data)
     clump_inverters(json_data)
     clump_transmission_gates(json_data)
     clump_tristate_buffers(json_data)
