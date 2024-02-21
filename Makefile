@@ -11,7 +11,7 @@ ${DOWNLOAD}/%.spice:
 	mkdir -p $(dir $@)
 	wget -O $@ https://raw.githubusercontent.com/${REPO}/master/$*.spice
 
-${JSON}/%.json: ${DOWNLOAD}/%.spice
+${JSON}/%.json: ${DOWNLOAD}/%.spice spice2json.py
 	mkdir -p $(dir $@)
 	./spice2json.py $< > $@
 

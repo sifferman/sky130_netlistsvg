@@ -86,27 +86,30 @@ def clump_inverters(json_input, vdd="VPWR", gnd="VGND"):
     for module_name, module in json_input["modules"].items():
         inverters_to_clump = []
         for pfet_name, pfet_cell in module["cells"].items():
-            if pfet_cell["type"] != "pfet" or get_netid(vdd) not in pfet_cell["connections"]["D"] + pfet_cell["connections"]["S"]:
+            if pfet_cell["type"] != "pfet":
                 continue
+            # find y
+            if [get_netid(vdd)] == pfet_cell["connections"]["D"]:
+                y = pfet_cell["connections"]["S"]
+            elif [get_netid(vdd)] == pfet_cell["connections"]["S"]:
+                y = pfet_cell["connections"]["D"]
+            else:
+                continue
+            # find nfet
             for nfet_name, nfet_cell in module["cells"].items():
-                if nfet_cell["type"] != "nfet" or get_netid(gnd) not in nfet_cell["connections"]["D"] + nfet_cell["connections"]["S"]:
+                if nfet_cell["type"] != "nfet":
                     continue
+                # check a
                 if pfet_cell["connections"]["G"] != nfet_cell["connections"]["G"]:
                     continue
                 A = pfet_cell["connections"]["G"]
-                possible_ys = []
-                if pfet_cell["connections"]["D"] != [get_netid(vdd)]:
-                    possible_ys += pfet_cell["connections"]["D"]
-                if pfet_cell["connections"]["S"] != [get_netid(vdd)]:
-                    possible_ys += pfet_cell["connections"]["S"]
-                if nfet_cell["connections"]["D"] != [get_netid(gnd)]:
-                    possible_ys += nfet_cell["connections"]["D"]
-                if nfet_cell["connections"]["S"] != [get_netid(gnd)]:
-                    possible_ys += nfet_cell["connections"]["S"]
-
-                if len(possible_ys) != 2 or possible_ys[0] != possible_ys[1]:
+                # check y
+                if [get_netid(gnd)] == nfet_cell["connections"]["D"] and y == nfet_cell["connections"]["S"]:
+                    pass
+                elif [get_netid(gnd)] == nfet_cell["connections"]["S"] and y == nfet_cell["connections"]["D"]:
+                    pass
+                else:
                     continue
-                y = [possible_ys[0]]
                 inverters_to_clump.append((pfet_name, nfet_name, A, y))
 
         # Create a new inverter cell and remove the individual pfet and nfet cells
