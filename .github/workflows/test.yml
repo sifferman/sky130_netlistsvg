@@ -8,14 +8,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
       - name: Install Tools
         run: |
           sudo apt update
           git clone https://github.com/nturley/netlistsvg.git
           cd netlistsvg
-          sudo npm install
-          sudo npm install -g . --legacy-peer-deps
+          sudo npm install --legacy-peer-deps
+          sudo npm install -g .
       - name: Build
         run: |
           make
