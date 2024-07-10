@@ -457,3 +457,6 @@ svg/cells/xor2/sky130_fd_sc_hd__xor2_4.svg \
 svg/cells/xor3/sky130_fd_sc_hd__xor3_1.svg \
 svg/cells/xor3/sky130_fd_sc_hd__xor3_2.svg \
 svg/cells/xor3/sky130_fd_sc_hd__xor3_4.svg
+
+clean:
+	rm -rf download json svg
