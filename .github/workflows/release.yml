@@ -1,0 +1,41 @@
+name: Release
+on:
+  push:
+    branches:
+      - main
+permissions:
+  contents: write
+jobs:
+  Release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v4
+      - name: Install Tools
+        run: |
+          sudo apt update
+          git clone https://github.com/nturley/netlistsvg.git
+          cd netlistsvg
+          sudo npm install --legacy-peer-deps
+          sudo npm install -g .
+      - name: Build
+        run: |
+          make -j`nproc`
+      - name: Tar
+        run: |
+          cd svg
+          tar -czf cells.tar.gz *
+      - name: Create Tag
+        run: |
+          echo "TAG_NAME=$(date +%Y.%m.%d.%H.%M)" >> "$GITHUB_ENV"
+          git tag ${{ env.TAG_NAME }}
+          git push origin ${{ env.TAG_NAME }}
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: True
+          omitBody: True
+          tag: ${{ env.TAG_NAME }}
+          artifacts: |
+            svg/cells.tar.gz
+          token: ${{ secrets.GITHUB_TOKEN }}
