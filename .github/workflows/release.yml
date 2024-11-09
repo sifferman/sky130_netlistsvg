@@ -23,8 +23,7 @@ jobs:
           make -j`nproc`
       - name: Tar
         run: |
-          cd svg
-          tar -czf cells.tar.gz *
+          tar -czf cells.tar.gz svg json
       - name: Create Tag
         run: |
           echo "TAG_NAME=$(date +%Y.%m.%d.%H.%M)" >> "$GITHUB_ENV"
@@ -37,5 +36,5 @@ jobs:
           omitBody: True
           tag: ${{ env.TAG_NAME }}
           artifacts: |
-            svg/cells.tar.gz
+            cells.tar.gz
           token: ${{ secrets.GITHUB_TOKEN }}
