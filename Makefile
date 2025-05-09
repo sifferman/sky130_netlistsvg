@@ -3,7 +3,7 @@ DOWNLOAD := download
 JSON := json
 SVG := svg
 
-REPO := efabless/skywater-pdk-libs-sky130_fd_sc_hd
+REPO := fossi-foundation/skywater-pdk-libs-sky130_fd_sc_hd
 
 .SECONDARY:
 
