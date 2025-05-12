@@ -9,7 +9,7 @@ REPO := fossi-foundation/skywater-pdk-libs-sky130_fd_sc_hd
 
 ${DOWNLOAD}/%.spice:
 	mkdir -p $(dir $@)
-	wget -O $@ https://raw.githubusercontent.com/${REPO}/master/$*.spice
+	wget -O $@ https://raw.githubusercontent.com/${REPO}/main/$*.spice
 
 ${JSON}/%.json: ${DOWNLOAD}/%.spice spice2json.py
 	mkdir -p $(dir $@)
